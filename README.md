@@ -8,10 +8,15 @@ This application is built using React for the frontend and Express with Prisma f
 - Rate limiting for sign-up
 - Password visibility toggle and confirm password functionality
 - Change password feature
-- Tailwind CSS for styling
-- Get posts endpoint with backend integration
+- Used Middleware for authentication and authorization
+- Used bcrypt hashing algorithm for secure password storage
+- Handled Token Management and expiration effectively
+- Paginated implementation of fetching posts data from database.
 - Framer Motion for animations in the frontend
+  -Displayed clear error messages and success messages on Sign up
+- Input Validation Using Zod in Backend
 - React Router DOM for routing
+- Tailwind CSS for styling
 
 ## Requirements
 
