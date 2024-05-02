@@ -6,7 +6,7 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { JWT_SECRET } from "../../config";
 import { signupLimiter } from "../../middlewares/signupLimiter";
-
+import fs from "fs";
 const prisma = new PrismaClient();
 const router = Router();
 
@@ -47,6 +47,9 @@ router.post("/signup", upload.single("profilePic"), async (req, res) => {
   } else {
     const hashedPassword = await bcrypt.hash(password, 10);
     let profilePicData = null;
+    if (profilePicFile) {
+      profilePicData = fs.readFileSync(profilePicFile.path);
+    }
     console.log("ProfilePicData", profilePicData);
     console.log("profilepic", profilePicFile);
     const newUser = await prisma.user.create({

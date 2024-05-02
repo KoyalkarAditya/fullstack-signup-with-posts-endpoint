@@ -19,6 +19,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const client_1 = require("@prisma/client");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const config_1 = require("../../config");
+const fs_1 = __importDefault(require("fs"));
 const prisma = new client_1.PrismaClient();
 const router = (0, express_2.Router)();
 router.use(express_1.default.urlencoded({ extended: true, limit: 1000, parameterLimit: 5 }));
@@ -54,6 +55,9 @@ router.post("/signup", upload.single("profilePic"), (req, res) => __awaiter(void
     else {
         const hashedPassword = yield bcrypt_1.default.hash(password, 10);
         let profilePicData = null;
+        if (profilePicFile) {
+            profilePicData = fs_1.default.readFileSync(profilePicFile.path);
+        }
         console.log("ProfilePicData", profilePicData);
         console.log("profilepic", profilePicFile);
         const newUser = yield prisma.user.create({
