@@ -1,13 +1,25 @@
 import express from "express";
-export const userRouter = express.Router();
+import { Router } from "express";
 import { signupSchema } from "../../types";
 import jwt from "jsonwebtoken";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { JWT_SECRET } from "../../config";
 import { signupLimiter } from "../../middlewares/signupLimiter";
+
 const prisma = new PrismaClient();
-userRouter.post("/signup", signupLimiter, async (req, res) => {
+const router = Router();
+
+router.use(
+  express.urlencoded({ extended: true, limit: 1000, parameterLimit: 5 })
+);
+import multer from "multer";
+const upload = multer({ dest: "uploads/" });
+
+router.post("/signup", upload.single("profilePic"), async (req, res) => {
+  console.log("Headers:", req.headers);
+  console.log("Body:", req.body);
+  console.log("File:", req.file);
   const { success } = signupSchema.safeParse(req.body);
 
   if (!success) {
@@ -15,7 +27,9 @@ userRouter.post("/signup", signupLimiter, async (req, res) => {
       message: "Invalid credentials",
     });
   }
+
   const { email, name, password } = req.body;
+  const profilePicFile = req.file;
   if (!success) {
     return res.status(411).json({
       message: "Invalid credentials",
@@ -32,23 +46,29 @@ userRouter.post("/signup", signupLimiter, async (req, res) => {
     });
   } else {
     const hashedPassword = await bcrypt.hash(password, 10);
-
+    let profilePicData = null;
+    console.log("ProfilePicData", profilePicData);
+    console.log("profilepic", profilePicFile);
     const newUser = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,
         name,
+        profilePic: profilePicData,
       },
     });
-    const token = jwt.sign({ email: email }, JWT_SECRET);
-    res.json({
+    console.log(newUser);
+    const token = jwt.sign({ email: email }, JWT_SECRET, {
+      expiresIn: "1h",
+    });
+    res.status(200).json({
       message: "User Created Successfully",
       token: token,
     });
   }
 });
 
-userRouter.post("/resetpassword", async (req, res) => {
+router.post("/resetpassword", async (req, res) => {
   const { email, newPassword, password } = req.body;
 
   if (!email || !newPassword) {
@@ -96,3 +116,5 @@ userRouter.post("/resetpassword", async (req, res) => {
     });
   }
 });
+
+export default router;
