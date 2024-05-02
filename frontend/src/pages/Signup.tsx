@@ -1,7 +1,7 @@
 import axios from "axios";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./../index.css";
+
 export const Signup = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -14,10 +14,10 @@ export const Signup = () => {
   });
 
   const [errorMessage, setErrorMessage] = useState("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Hell0");
 
     if (formData.password !== formData.confirmPassword) {
       setErrorMessage("Passwords do not match.");
@@ -38,8 +38,6 @@ export const Signup = () => {
         setErrorMessage("Please Accept Terms and Conditions to Signup");
         return;
       } else {
-        console.log("form", formData);
-        console.log("to send", formDataToSend);
         const response = await axios.post(
           "http://localhost:3000/api/v1/user/signup",
           formDataToSend,
@@ -49,7 +47,7 @@ export const Signup = () => {
             },
           }
         );
-        if (response.status == 200) {
+        if (response.status === 200) {
           alert("Signup Successful!!");
           localStorage.setItem("jwtToken", response.data.token);
           navigate("/posts");
@@ -59,9 +57,10 @@ export const Signup = () => {
       }
     } catch (error) {
       console.log("Error during inputs submission", error);
-      setErrorMessage("Error");
+      setErrorMessage("Error during Signup / Invalid Inputs");
     }
   };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, files, value } = e.target;
     if (name === "profilePic" && files && files.length > 0) {
@@ -76,8 +75,13 @@ export const Signup = () => {
       });
     }
   };
+
   const handleCheckboxChange = () => {
     setFormData({ ...formData, terms: !formData.terms });
+  };
+
+  const togglePasswordVisibility = () => {
+    setPasswordVisible(!passwordVisible);
   };
 
   return (
@@ -121,13 +125,22 @@ export const Signup = () => {
           >
             Password:
           </label>
-          <input
-            type="password"
-            id="password"
-            name="password"
-            className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
-            onChange={handleChange}
-          />
+          <div className="relative">
+            <input
+              type={passwordVisible ? "text" : "password"}
+              id="password"
+              name="password"
+              className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+              onChange={handleChange}
+            />
+            <button
+              type="button"
+              onClick={togglePasswordVisibility}
+              className="absolute inset-y-0 right-0 flex items-center px-2 text-gray-600"
+            >
+              {passwordVisible ? "Hide" : "Show"}
+            </button>
+          </div>
         </div>
 
         <div>
@@ -137,13 +150,22 @@ export const Signup = () => {
           >
             Confirm Password:
           </label>
-          <input
-            type="password"
-            id="confirmPassword"
-            name="confirmPassword"
-            className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
-            onChange={handleChange}
-          />
+          <div className="relative">
+            <input
+              type={passwordVisible ? "text" : "password"}
+              id="confirmPassword"
+              name="confirmPassword"
+              className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+              onChange={handleChange}
+            />
+            <button
+              type="button"
+              onClick={togglePasswordVisibility}
+              className="absolute inset-y-0 right-0 flex items-center px-2 text-gray-600"
+            >
+              {passwordVisible ? "Hide" : "Show"}
+            </button>
+          </div>
         </div>
 
         <div>
@@ -151,7 +173,7 @@ export const Signup = () => {
             htmlFor="profile"
             className="block text-sm font-medium text-gray-700"
           >
-            Profile Picture
+            Profile Picture:
           </label>
           <input
             type="file"

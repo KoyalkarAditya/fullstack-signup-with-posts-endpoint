@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import LazyLoadedImage from "./Image";
 import { AppBar } from "./AppBar";
+import { checkTokenExpiry } from "./CheckTokenExpiry";
 
 interface Post {
   id: number;
@@ -24,15 +25,14 @@ function Posts() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const token = localStorage.getItem("jwtToken");
   const navigate = useNavigate();
-
   useEffect(() => {
-    if (!token) {
-      navigate("/signup");
-    }
-  }, [token, navigate]);
-
+    checkTokenExpiry();
+  }, []);
+  const token = localStorage.getItem("jwtToken");
+  if (!token) {
+    navigate("/signup");
+  }
   const fetchPosts = async (newPage: number) => {
     if (loading) return;
 

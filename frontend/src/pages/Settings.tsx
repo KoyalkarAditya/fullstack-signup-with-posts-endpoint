@@ -1,18 +1,20 @@
 import axios from "axios";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { checkTokenExpiry } from "../components/CheckTokenExpiry";
 
 export function Settings() {
   const navigate = useNavigate();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [isCorrect, setIsCorrect] = useState(true);
+  useEffect(() => {
+    checkTokenExpiry();
+  }, []);
   const token = localStorage.getItem("jwtToken");
-
   if (!token) {
     navigate("/signup");
   }
-
   return (
     <div className="flex justify-center items-center h-screen">
       <div className="flex justify-center items-center shadow-xl  flex-col p-10 gap-5">
