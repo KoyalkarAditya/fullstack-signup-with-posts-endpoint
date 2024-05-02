@@ -73,8 +73,8 @@ router.post("/signup", upload.single("profilePic"), async (req, res) => {
 });
 
 router.post("/resetpassword", authMiddleware, async (req, res) => {
-  const { email, newPassword, password } = req.body;
-
+  const { newPassword, password } = req.body;
+  const email = req.email;
   if (!email || !newPassword) {
     return res
       .status(400)
@@ -104,7 +104,7 @@ router.post("/resetpassword", authMiddleware, async (req, res) => {
             password: newHashedPassword,
           },
         });
-        return res.json({
+        return res.status(200).json({
           message: "Password has been updated ",
         });
       } else {

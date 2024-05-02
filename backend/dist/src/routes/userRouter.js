@@ -24,6 +24,7 @@ const prisma = new client_1.PrismaClient();
 const router = (0, express_2.Router)();
 router.use(express_1.default.urlencoded({ extended: true, limit: 1000, parameterLimit: 5 }));
 const multer_1 = __importDefault(require("multer"));
+const authMiddleware_1 = __importDefault(require("../../middlewares/authMiddleware"));
 const upload = (0, multer_1.default)({ dest: "uploads/" });
 router.post("/signup", upload.single("profilePic"), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     console.log("Headers:", req.headers);
@@ -78,8 +79,9 @@ router.post("/signup", upload.single("profilePic"), (req, res) => __awaiter(void
         });
     }
 }));
-router.post("/resetpassword", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { email, newPassword, password } = req.body;
+router.post("/resetpassword", authMiddleware_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { newPassword, password } = req.body;
+    const email = req.email;
     if (!email || !newPassword) {
         return res
             .status(400)
@@ -109,7 +111,7 @@ router.post("/resetpassword", (req, res) => __awaiter(void 0, void 0, void 0, fu
                         password: newHashedPassword,
                     },
                 });
-                return res.json({
+                return res.status(200).json({
                     message: "Password has been updated ",
                 });
             }

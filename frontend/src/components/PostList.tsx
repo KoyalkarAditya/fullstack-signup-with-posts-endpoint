@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import LazyLoadedImage from "./Image";
+import { AppBar } from "./AppBar";
 
 interface Post {
   id: number;
@@ -92,7 +93,7 @@ function Posts() {
 
   return (
     <div className="m-5">
-      <div className="text-center text-4xl font-mono font-bold">All Posts</div>
+      <AppBar />
       <div className="container mx-auto p-4 mb-10">
         {posts.map((post, index) => (
           <motion.div

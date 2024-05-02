@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 export function AppBar() {
   const navigate = useNavigate();
   return (
-    <div>
+    <div className=" flex justify-between p-5">
       <div className="text-center text-4xl font-mono font-bold">All Posts</div>
       <svg
         xmlns="http://www.w3.org/2000/svg"

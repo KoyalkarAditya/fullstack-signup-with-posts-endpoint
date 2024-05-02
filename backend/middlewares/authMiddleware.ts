@@ -11,6 +11,7 @@ function authMiddleware(req: Request, res: Response, next: NextFunction) {
   const token = authHeader.split(" ")[1];
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
+    if (typeof decoded == "object") req.email = decoded.email;
     next();
   } catch (err) {
     return res.status(403).json({ message: "Authentication failed" });
