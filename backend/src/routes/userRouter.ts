@@ -14,6 +14,7 @@ router.use(
   express.urlencoded({ extended: true, limit: 1000, parameterLimit: 5 })
 );
 import multer from "multer";
+import authMiddleware from "../../middlewares/authMiddleware";
 const upload = multer({ dest: "uploads/" });
 
 router.post("/signup", upload.single("profilePic"), async (req, res) => {
@@ -71,7 +72,7 @@ router.post("/signup", upload.single("profilePic"), async (req, res) => {
   }
 });
 
-router.post("/resetpassword", async (req, res) => {
+router.post("/resetpassword", authMiddleware, async (req, res) => {
   const { email, newPassword, password } = req.body;
 
   if (!email || !newPassword) {

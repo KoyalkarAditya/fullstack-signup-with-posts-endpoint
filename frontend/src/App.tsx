@@ -5,7 +5,6 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<h1 className=" text-4xl">Hello</h1>} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/posts" element={<Posts />} />
       </Routes>

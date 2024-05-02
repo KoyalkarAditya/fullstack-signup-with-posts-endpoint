@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
 import axios from "axios";
-import InfiniteScroll from "react-infinite-scroll-component";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import LazyLoadedImage from "./Image";
 
 interface Post {
   id: number;
@@ -9,88 +11,109 @@ interface Post {
   published: boolean;
   author: User;
 }
+
 interface User {
   name: string;
   email: string;
   profilePic: string;
 }
 
-const PostList = () => {
+function Posts() {
   const [posts, setPosts] = useState<Post[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const limit = 10;
+  const token = localStorage.getItem("jwtToken");
+  const navigate = useNavigate();
 
-  const fetchPosts = async () => {
-    try {
-      const response = await axios.get(`/api/v1/posts`, {
-        params: {
-          page: currentPage,
-          limit: limit,
-        },
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
-        },
-      });
-
-      // Append fetched posts to the existing posts array
-      setPosts((prevPosts) => [...prevPosts, ...response.data.posts]);
-
-      // Update current page and hasMore flag
-      setCurrentPage((prevPage) => prevPage + 1);
-      setHasMore(currentPage < response.data.meta.total_pages);
-    } catch (error) {
-      console.error("Error fetching posts:", error);
-      setHasMore(false);
+  useEffect(() => {
+    if (!token) {
+      navigate("/signup");
     }
+  }, [token, navigate]);
+
+  const fetchPosts = async (newPage: number) => {
+    if (loading) return;
+
+    setLoading(true);
+
+    try {
+      const response = await axios.get(
+        `http://localhost:3000/api/v1/posts?page=${newPage}&limit=10`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      const data = response.data;
+
+      if (newPage === 1) {
+        setPosts(data.posts);
+      } else {
+        setPosts((prevPosts) => [...prevPosts, ...data.posts]);
+      }
+
+      setPage(newPage);
+      setHasMore(newPage < data.meta.total_pages);
+    } catch (error) {
+      console.error("Failed to fetch posts:", error);
+    }
+
+    setLoading(false);
   };
 
-  // Fetch initial posts when the component mounts
   useEffect(() => {
-    fetchPosts();
-  }, []);
+    const handleScroll = () => {
+      const isNearBottom =
+        window.innerHeight + window.scrollY >= document.body.offsetHeight - 50;
+      if (isNearBottom && hasMore && !loading) {
+        fetchPosts(page + 1);
+      } else if (isNearBottom && !hasMore) {
+        setPage(1);
+        fetchPosts(1);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [loading, hasMore, page]);
+
+  useEffect(() => {
+    fetchPosts(page);
+  }, [page]);
+  const renderImage = (profilePic: string | undefined) => {
+    if (!profilePic) return null;
+    return <LazyLoadedImage src={profilePic} alt="Profile" />;
+  };
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-      <InfiniteScroll
-        dataLength={posts.length}
-        next={fetchPosts}
-        hasMore={hasMore}
-        loader={<h4>Loading...</h4>}
-        endMessage={<p>No more posts to load</p>}
-      >
-        {posts.map((post) => (
-          <div key={post.id} className="post-item">
-            {/* Display post title */}
-            <h3 className="font-semibold text-lg">{post.title}</h3>
-
-            {/* Display post content */}
-            <p className="text-sm">{post.content}</p>
-
-            {/* Display user information */}
-            <div className="user-info mt-2">
-              {/* Display user profile picture (if available) */}
-              {post.author.profilePic && (
-                <img
-                  src={`data:image/jpeg;base64,${Buffer.from(
-                    post.author.profilePic
-                  ).toString("base64")}`}
-                  alt={post.author.name}
-                  className="user-profile-pic rounded-full"
-                  width={40}
-                  height={40}
-                />
-              )}
-
-              {/* Display user name */}
-              <span className="user-name ml-2">{post.author.name}</span>
-            </div>
-
-            <hr className="my-2" />
-          </div>
+    <div className="m-5">
+      <div className="text-center text-4xl font-mono font-bold">All Posts</div>
+      <div className="container mx-auto p-4 mb-10">
+        {posts.map((post, index) => (
+          <motion.div
+            key={index}
+            className="border-b py-4"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+          >
+            <h2 className="text-2xl font-bold mb-2">{post.title}</h2>
+            <p className="mb-2">{post.content}</p>
+            <p className="text-sm text-gray-600">
+              <strong>Author:</strong> {post.author.name}
+            </p>
+            {renderImage(post.author.profilePic)}
+          </motion.div>
         ))}
-      </InfiniteScroll>
+        {loading && <p className="text-center mt-4">Loading more posts...</p>}
+      </div>
     </div>
   );
-};
-export default PostList;
+}
+
+export default Posts;
