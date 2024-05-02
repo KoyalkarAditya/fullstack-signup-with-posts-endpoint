@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { JWT_SECRET } from "../../config";
-import { signupLimiter } from "../../middlewares/signupLimiter";
+import { rateLimiter } from "../../middlewares/signupLimiter";
 import fs from "fs";
 const prisma = new PrismaClient();
 const router = Router();
@@ -17,62 +17,64 @@ import multer from "multer";
 import authMiddleware from "../../middlewares/authMiddleware";
 const upload = multer({ dest: "uploads/" });
 
-router.post("/signup", upload.single("profilePic"), async (req, res) => {
-  console.log("Headers:", req.headers);
-  console.log("Body:", req.body);
-  console.log("File:", req.file);
-  const { success } = signupSchema.safeParse(req.body);
+router.post(
+  "/signup",
+  upload.single("profilePic"),
+  rateLimiter,
+  async (req, res) => {
+    const { success } = signupSchema.safeParse(req.body);
 
-  if (!success) {
-    return res.status(411).json({
-      message: "Invalid credentials",
-    });
-  }
-
-  const { email, name, password } = req.body;
-  const profilePicFile = req.file;
-  if (!success) {
-    return res.status(411).json({
-      message: "Invalid credentials",
-    });
-  }
-  const userExits = await prisma.user.findFirst({
-    where: {
-      email,
-    },
-  });
-  if (userExits) {
-    return res.status(411).json({
-      message: "User already exists with the username or password",
-    });
-  } else {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    let profilePicData = null;
-    if (profilePicFile) {
-      profilePicData = fs.readFileSync(profilePicFile.path);
+    if (!success) {
+      return res.status(411).json({
+        message: "Invalid credentials",
+      });
     }
-    console.log("ProfilePicData", profilePicData);
-    console.log("profilepic", profilePicFile);
-    const newUser = await prisma.user.create({
-      data: {
+
+    const { email, name, password } = req.body;
+    const profilePicFile = req.file;
+    if (!success) {
+      return res.status(411).json({
+        message: "Invalid credentials",
+      });
+    }
+    const userExits = await prisma.user.findFirst({
+      where: {
         email,
-        password: hashedPassword,
-        name,
-        profilePic: profilePicData,
       },
     });
-    console.log(newUser);
-    const token = jwt.sign({ email: email }, JWT_SECRET, {
-      expiresIn: "1h",
-    });
-    res.status(200).json({
-      message: "User Created Successfully",
-      token: token,
-    });
+    if (userExits) {
+      return res.status(411).json({
+        message: "User already exists with the username or password",
+      });
+    } else {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      let profilePicData = null;
+      if (profilePicFile) {
+        profilePicData = fs.readFileSync(profilePicFile.path);
+      }
+      console.log("ProfilePicData", profilePicData);
+      console.log("profilepic", profilePicFile);
+      const newUser = await prisma.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          name,
+          profilePic: profilePicData,
+        },
+      });
+      console.log(newUser);
+      const token = jwt.sign({ email: email }, JWT_SECRET, {
+        expiresIn: "1h",
+      });
+      res.status(200).json({
+        message: "User Created Successfully",
+        token: token,
+      });
+    }
   }
-});
+);
 
-router.post("/resetpassword", authMiddleware, async (req, res) => {
+router.post("/resetpassword", authMiddleware, rateLimiter, async (req, res) => {
   const { newPassword, password } = req.body;
   const email = req.email;
   if (!email || !newPassword) {
